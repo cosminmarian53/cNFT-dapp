@@ -5,39 +5,28 @@
 import { useEffect, useState } from "react";
 import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { AuthAdapter } from "@web3auth/auth-adapter";
-import { CHAIN_NAMESPACES, IProvider, WALLET_ADAPTERS } from "@web3auth/base";
+import { IProvider, WALLET_ADAPTERS } from "@web3auth/base";
 import { web3AuthConfig, authAdapterConfig } from "./config/web3auth";
 import EthereumRPC from "./RPC/ethRPC-web3"; // for using web3.js
 import SolanaRPC from "./RPC/solanaRPC"; // for using solana
 import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
 import {
   createTree,
-  fetchMerkleTree,
   fetchTreeConfigFromSeeds,
   findLeafAssetIdPda,
-  getAssetWithProof,
-  LeafSchema,
-  mintToCollectionV1,
   mintV1,
   mplBubblegum,
-  parseLeafFromMintToCollectionV1Transaction,
   parseLeafFromMintV1Transaction,
-  verifyCollection,
   SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
   SPL_NOOP_PROGRAM_ID,
   MetadataArgsArgs,
 } from "@metaplex-foundation/mpl-bubblegum";
+import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
 import {
-  createNft,
-  mplTokenMetadata,
-} from "@metaplex-foundation/mpl-token-metadata";
-import {
-  createGenericFile,
   createSignerFromKeypair,
   generateSigner,
   keypairIdentity,
   none,
-  percentAmount,
   publicKey,
 } from "@metaplex-foundation/umi";
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
@@ -217,6 +206,9 @@ function Page() {
       uiConsole("Error creating cNFT:", error);
     }
   };
+
+  // Function to get all accounts and balances
+
   const getAllAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -238,6 +230,8 @@ function Page() {
     );
   };
 
+  // Function to get all balances
+
   const getAllBalances = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -257,7 +251,7 @@ function Page() {
       "Solana Balance: " + solana_balance
     );
   };
-
+  // Function to login
   const login = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -270,7 +264,7 @@ function Page() {
     setLoggedIn(true);
     uiConsole("Logged in Successfully!");
   };
-
+  // Function to authenticate user
   const authenticateUser = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -279,7 +273,7 @@ function Page() {
     const idToken = await web3auth.authenticateUser();
     uiConsole(idToken);
   };
-
+  // Function to logout
   const logout = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -289,7 +283,7 @@ function Page() {
     setProvider(null);
     setLoggedIn(false);
   };
-
+  // Function to get Ethereum accounts
   const getEthAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -299,7 +293,7 @@ function Page() {
     const address = await rpc.getAccounts();
     uiConsole("ETH Address: " + address);
   };
-
+  // Function to get Solana accounts
   const getSolanaAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -312,7 +306,7 @@ function Page() {
     const address = await solanaRPC.getAccounts();
     uiConsole("Solana Address: " + address);
   };
-
+  // Function to get Ethereum balance
   const getEthBalance = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -324,6 +318,8 @@ function Page() {
     const finalString = "ETH Balance: " + balance;
     uiConsole(finalString);
   };
+
+  // Function to get Solana balance
 
   const getSolanaBalance = async () => {
     if (!provider) {
@@ -339,7 +335,7 @@ function Page() {
     const finalString = "SOL Balance: " + balance;
     uiConsole(finalString);
   };
-
+  // functions to send transactions
   const sendTransaction = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -363,7 +359,7 @@ function Page() {
     const receipt = await solanaRPC.sendTransaction();
     uiConsole(receipt);
   };
-
+  // functions to sign messages
   const signEthereumMessage = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -387,7 +383,7 @@ function Page() {
     const signedMessage = await solanaRPC.signMessage();
     uiConsole(signedMessage);
   };
-
+  // Function to display console logs in the UI
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
