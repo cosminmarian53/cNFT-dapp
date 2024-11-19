@@ -91,8 +91,7 @@ function Page() {
       // Derive Solana keypair
       const ethRPC = new EthereumRPC(provider);
       const ethPrivateKey = await ethRPC.getPrivateKey();
-      const endpoint =
-        "https://devnet.helius-rpc.com/?api-key=86d673b2-66a5-418b-9876-8cdc4a096840";
+      const endpoint = "https://api.devnet.solana.com";
       const ed25519Key = getED25519Key(ethPrivateKey).sk;
 
       console.log("Initializing UMI...");
@@ -105,10 +104,6 @@ function Page() {
       const solanaKeypair = Keypair.fromSecretKey(new Uint8Array(ed25519Key));
       let keypair = umi.eddsa.createKeypairFromSecretKey(
         new Uint8Array(solanaKeypair.secretKey)
-      );
-      console.log(
-        "Solana private key: ",
-        bs58.default.encode(solanaKeypair.secretKey)
       );
       const wallet = createSignerFromKeypair(umi, keypair);
       umi.use(keypairIdentity(wallet));
@@ -187,7 +182,7 @@ function Page() {
 
       console.log("Minting Compressed NFT to Merkle Tree...");
       // Step 5: Mint NFT
-      const leafOwner = generateSigner(umi).publicKey;
+      const leafOwner = publicKey(solanaKeypair.publicKey.toString());
       const { signature } = await mintV1(umi, {
         leafOwner,
         merkleTree: merkleTree.publicKey,
