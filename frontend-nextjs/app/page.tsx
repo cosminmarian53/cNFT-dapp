@@ -9,33 +9,7 @@ import { IProvider, WALLET_ADAPTERS } from "@web3auth/base";
 import { web3AuthConfig, authAdapterConfig } from "./config/web3auth";
 import EthereumRPC from "./RPC/ethRPC-web3"; // for using web3.js
 import SolanaRPC from "./RPC/solanaRPC"; // for using solana
-import { dasApi } from "@metaplex-foundation/digital-asset-standard-api";
-import {
-  createTree,
-  fetchTreeConfigFromSeeds,
-  findLeafAssetIdPda,
-  mintV1,
-  mplBubblegum,
-  parseLeafFromMintV1Transaction,
-  SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-  SPL_NOOP_PROGRAM_ID,
-  MetadataArgsArgs,
-} from "@metaplex-foundation/mpl-bubblegum";
-import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
-import {
-  createSignerFromKeypair,
-  generateSigner,
-  keypairIdentity,
-  none,
-  publicKey,
-} from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
-import { getED25519Key } from "@web3auth/auth-adapter";
-import { Keypair } from "@solana/web3.js";
-
-let bs58 = require("bs58");
-
+import CreateAndMintNft from "./components/CreateAndMintNft";
 function Page() {
   const [provider, setProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(false);
@@ -68,147 +42,6 @@ function Page() {
     init();
   }, []);
 
-  const createCnft = async () => {
-    try {
-      console.log("Starting createCnft function...");
-      if (!provider) {
-        console.error("Provider not initialized yet");
-        return;
-      }
-
-      console.log("Deriving Solana keypair...");
-      // Derive Solana keypair
-      const ethRPC = new EthereumRPC(provider);
-      const ethPrivateKey = await ethRPC.getPrivateKey();
-      const endpoint = "https://api.devnet.solana.com";
-      const ed25519Key = getED25519Key(ethPrivateKey).sk;
-
-      console.log("Initializing UMI...");
-      // Initialize UMI
-      const umi = createUmi(endpoint)
-        .use(dasApi())
-        .use(mplBubblegum())
-        .use(mplTokenMetadata())
-        .use(irysUploader({ address: "https://devnet.irys.xyz" }));
-      const solanaKeypair = Keypair.fromSecretKey(new Uint8Array(ed25519Key));
-      let keypair = umi.eddsa.createKeypairFromSecretKey(
-        new Uint8Array(solanaKeypair.secretKey)
-      );
-      const wallet = createSignerFromKeypair(umi, keypair);
-      umi.use(keypairIdentity(wallet));
-
-      console.log("Creating Merkle Tree...");
-      // Step 1: Create Merkle Tree
-      const merkleTree = generateSigner(umi);
-      console.log(
-        "Merkle Tree Public Key:",
-        merkleTree.publicKey.toString(),
-        "\nStore this address as you will need it later."
-      );
-      uiConsole("Merkle Tree Public Key:", merkleTree.publicKey.toString());
-      console.log("Creating Merkle Tree...");
-      uiConsole("Creating Merkle Tree...");
-      const createTreeTx = await createTree(umi, {
-        merkleTree,
-        maxDepth: 3,
-        maxBufferSize: 8,
-        canopyDepth: 0,
-        logWrapper: SPL_NOOP_PROGRAM_ID,
-        compressionProgram: SPL_ACCOUNT_COMPRESSION_PROGRAM_ID,
-      });
-
-      console.log("Sending request to create Merkle Tree...");
-      const { blockhash, lastValidBlockHeight } =
-        await umi.rpc.getLatestBlockhash();
-      await createTreeTx.sendAndConfirm(umi, {
-        send: { commitment: "finalized" },
-        confirm: {
-          strategy: { type: "blockhash", blockhash, lastValidBlockHeight },
-        },
-      });
-
-      console.log("Waiting for Merkle Tree to be created...");
-      let treeFound = false;
-      while (!treeFound) {
-        try {
-          const treeConfig = await fetchTreeConfigFromSeeds(umi, {
-            merkleTree: merkleTree.publicKey,
-          });
-          treeFound = true;
-          console.log(
-            `🌲 Merkle Tree created: ${merkleTree.publicKey.toString()}. Config:`
-          );
-          console.log(
-            `     - Total Mint Capacity ${Number(
-              treeConfig.totalMintCapacity
-            ).toLocaleString()}`
-          );
-          console.log(
-            `     - Number Minted: ${Number(
-              treeConfig.numMinted
-            ).toLocaleString()}`
-          );
-          console.log(`     - Is Public: ${treeConfig.isPublic}`);
-          console.log(
-            `     - Is Decompressible: ${treeConfig.isDecompressible}`
-          );
-        } catch (error) {
-          console.log("Merkle Tree not found yet, retrying in 5 seconds...");
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-        }
-      }
-
-      console.log("Uploading cNFT metadata...");
-      //** Upload Image and Metadata used for the NFT (Optional) **
-      const nftMetadata: MetadataArgsArgs = {
-        name: "Cyber-Spliced Alien 3000",
-        symbol: "CSA3K",
-        uri: "https://raw.githubusercontent.com/cosminmarian53/Data-for-nfts/refs/heads/main/cyberalien.json",
-        sellerFeeBasisPoints: 500,
-        collection: none(),
-        creators: [],
-      };
-
-      console.log("Minting Compressed NFT to Merkle Tree...");
-      // Step 5: Mint NFT
-      const leafOwner = publicKey(solanaKeypair.publicKey.toString());
-      const { signature } = await mintV1(umi, {
-        leafOwner,
-        merkleTree: merkleTree.publicKey,
-        metadata: nftMetadata,
-      }).sendAndConfirm(umi);
-
-      console.log("Fetching asset ID...");
-      //Fetching asset ID
-      const leaf = await parseLeafFromMintV1Transaction(umi, signature);
-      const assetId = findLeafAssetIdPda(umi, {
-        merkleTree: merkleTree.publicKey,
-        leafIndex: leaf.nonce,
-      });
-      console.log(`🍃 NFT Minted: ${assetId[0].toString()}`);
-      console.log("Fetching the asset...");
-      // Fetch the asset
-      // Fetch the asset using umi rpc with DAS.
-      const asset = await umi.rpc.getAsset(assetId[0]);
-      console.log("Compressed NFT Asset ID:", assetId.toString());
-
-      console.log({ asset });
-      // Fetch the asset with proof
-      const rpcAssetProof = await umi.rpc.getAssetProof(publicKey(assetId));
-      console.log(rpcAssetProof);
-      // Display the asset ID and Solana Explorer link
-      uiConsole(
-        "🍃NFT Minted, paste this into solana explorer:",
-        assetId[0].toString()
-      );
-    } catch (error) {
-      console.error("Error creating cNFT:", error);
-      uiConsole("Error creating cNFT:", error);
-    }
-  };
-
-  // Function to get all accounts and balances
-
   const getAllAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -230,8 +63,6 @@ function Page() {
     );
   };
 
-  // Function to get all balances
-
   const getAllBalances = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -251,7 +82,7 @@ function Page() {
       "Solana Balance: " + solana_balance
     );
   };
-  // Function to login
+
   const login = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -264,7 +95,7 @@ function Page() {
     setLoggedIn(true);
     uiConsole("Logged in Successfully!");
   };
-  // Function to authenticate user
+
   const authenticateUser = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -273,7 +104,7 @@ function Page() {
     const idToken = await web3auth.authenticateUser();
     uiConsole(idToken);
   };
-  // Function to logout
+
   const logout = async () => {
     if (!web3auth) {
       uiConsole("web3auth not initialized yet");
@@ -283,7 +114,7 @@ function Page() {
     setProvider(null);
     setLoggedIn(false);
   };
-  // Function to get Ethereum accounts
+
   const getEthAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -293,7 +124,7 @@ function Page() {
     const address = await rpc.getAccounts();
     uiConsole("ETH Address: " + address);
   };
-  // Function to get Solana accounts
+
   const getSolanaAccounts = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -306,7 +137,7 @@ function Page() {
     const address = await solanaRPC.getAccounts();
     uiConsole("Solana Address: " + address);
   };
-  // Function to get Ethereum balance
+
   const getEthBalance = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -318,8 +149,6 @@ function Page() {
     const finalString = "ETH Balance: " + balance;
     uiConsole(finalString);
   };
-
-  // Function to get Solana balance
 
   const getSolanaBalance = async () => {
     if (!provider) {
@@ -335,7 +164,7 @@ function Page() {
     const finalString = "SOL Balance: " + balance;
     uiConsole(finalString);
   };
-  // functions to send transactions
+
   const sendTransaction = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -359,7 +188,7 @@ function Page() {
     const receipt = await solanaRPC.sendTransaction();
     uiConsole(receipt);
   };
-  // functions to sign messages
+
   const signEthereumMessage = async () => {
     if (!provider) {
       uiConsole("provider not initialized yet");
@@ -383,7 +212,7 @@ function Page() {
     const signedMessage = await solanaRPC.signMessage();
     uiConsole(signedMessage);
   };
-  // Function to display console logs in the UI
+
   function uiConsole(...args: any[]): void {
     const el = document.querySelector("#console>p");
     if (el) {
@@ -471,13 +300,8 @@ function Page() {
           >
             Get All Balances
           </button>
-          <button
-            onClick={createCnft}
-            className="btn hover:bg-green-400 p-1 rounded-md transition-colors"
-          >
-            Mint Compressed NFT
-          </button>
         </div>
+        <CreateAndMintNft provider={provider} uiConsole={uiConsole} />
       </div>
       <div id="console" className="mt-4 p-4 bg-gray-100 rounded-lg shadow-md">
         <p className="whitespace-pre-line"></p>
