@@ -9,7 +9,7 @@ import { IProvider, WALLET_ADAPTERS } from "@web3auth/base";
 import { web3AuthConfig, authAdapterConfig } from "./config/web3auth";
 import EthereumRPC from "./RPC/ethRPC-web3"; // for using web3.js
 import SolanaRPC from "./RPC/solanaRPC"; // for using solana
-import CreateAndMintNft from "./components/CreateAndMintNft";
+import CompressedNft from "./components/CompressedNft";
 function Page() {
   const [provider, setProvider] = useState<IProvider | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(false);
@@ -301,7 +301,7 @@ function Page() {
             Get All Balances
           </button>
         </div>
-        <CreateAndMintNft provider={provider} uiConsole={uiConsole} />
+        <CompressedNft provider={provider} uiConsole={uiConsole} />
       </div>
       <div id="console" className="mt-4 p-4 bg-gray-100 rounded-lg shadow-md">
         <p className="whitespace-pre-line"></p>
