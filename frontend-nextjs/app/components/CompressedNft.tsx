@@ -31,9 +31,10 @@ import {
 import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import { irysUploader } from "@metaplex-foundation/umi-uploader-irys";
 import { getED25519Key } from "@web3auth/auth-adapter";
-import { Keypair, Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import EthereumRPC from "../RPC/ethRPC-web3";
-
+import { Keypair } from "@solana/web3.js";
+import BnBRPC from "../RPC/bnbRPC-web3";
+import WormholeBrige from "./WormholeBridge";
+import bs58 from "bs58";
 interface CompressedNftProps {
   provider: IProvider | null;
   uiConsole: (...args: any[]) => void;
@@ -58,10 +59,10 @@ const CompressedNft: React.FC<CompressedNftProps> = ({
         return;
       }
 
-      const ethRPC = new EthereumRPC(provider);
-      const ethPrivateKey = await ethRPC.getPrivateKey();
+      const bnbRPC = new BnBRPC(provider);
+      const bnbPrivateKey = await bnbRPC.getPrivateKey();
       const endpoint = "https://api.devnet.solana.com";
-      const ed25519Key = getED25519Key(ethPrivateKey).sk;
+      const ed25519Key = getED25519Key(bnbPrivateKey).sk;
 
       const umi = createUmi(endpoint)
         .use(dasApi())
@@ -290,6 +291,12 @@ const CompressedNft: React.FC<CompressedNftProps> = ({
       >
         Decompress NFT
       </button>
+      <WormholeBrige
+        provider={provider}
+        assetId={assetId}
+        uiConsole={uiConsole}
+        solanaKeypair={solanaKeypair}
+      />
     </div>
   );
 };

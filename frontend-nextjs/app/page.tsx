@@ -7,7 +7,7 @@ import { Web3AuthNoModal } from "@web3auth/no-modal";
 import { AuthAdapter } from "@web3auth/auth-adapter";
 import { IProvider, WALLET_ADAPTERS } from "@web3auth/base";
 import { web3AuthConfig, authAdapterConfig } from "./config/web3auth";
-import EthereumRPC from "./RPC/ethRPC-web3"; // for using web3.js
+import BnBRPC from "./RPC/bnbRPC-web3"; // for using web3.js
 import SolanaRPC from "./RPC/solanaRPC"; // for using solana
 import CompressedNft from "./components/CompressedNft";
 function Page() {
@@ -30,8 +30,8 @@ function Page() {
         setProvider(web3auth.provider);
         if (web3auth.connected) {
           setLoggedIn(true);
-          const ethRPC = new EthereumRPC(web3auth.provider!);
-          const privateKey = await ethRPC.getPrivateKey();
+          const bnbRPC = new BnBRPC(web3auth.provider!);
+          const privateKey = await bnbRPC.getPrivateKey();
           setPrivateKey(privateKey);
         }
       } catch (error) {
@@ -49,17 +49,16 @@ function Page() {
     }
     // EVM chains
 
-    const rpcETH = new EthereumRPC(provider!);
+    const rpcETH = new BnBRPC(provider!);
     const privateKey = await rpcETH.getPrivateKey();
-
     const solanaRPC = new SolanaRPC(privateKey);
 
     const solana_address = await solanaRPC.getAccounts();
-    const eth_address = await rpcETH.getAccounts();
+    const bnb_address = await rpcETH.getAccounts();
 
     uiConsole(
       "Solana Address: " + solana_address,
-      "Ethereum Address: " + eth_address
+      "Binance Smart Chain Address: " + bnb_address
     );
   };
 
@@ -69,16 +68,16 @@ function Page() {
       return;
     }
 
-    const ethRPC = new EthereumRPC(provider!);
-    const privateKey = await ethRPC.getPrivateKey();
+    const bnbRPC = new BnBRPC(provider!);
+    const privateKey = await bnbRPC.getPrivateKey();
 
     const solanaRPC = new SolanaRPC(privateKey);
 
-    const eth_balance = await ethRPC.getBalance();
+    const bnb_balance = await bnbRPC.getBalance();
     const solana_balance = await solanaRPC.getBalance();
 
     uiConsole(
-      "Ethereum Balance: " + eth_balance,
+      "Binance Smart Chain Balance: " + bnb_balance,
       "Solana Balance: " + solana_balance
     );
   };
@@ -120,7 +119,7 @@ function Page() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const rpc = new EthereumRPC(provider);
+    const rpc = new BnBRPC(provider);
     const address = await rpc.getAccounts();
     uiConsole("ETH Address: " + address);
   };
@@ -130,8 +129,8 @@ function Page() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const ethRPC = new EthereumRPC(provider!);
-    const privateKey = await ethRPC.getPrivateKey();
+    const bnbRPC = new BnBRPC(provider!);
+    const privateKey = await bnbRPC.getPrivateKey();
 
     const solanaRPC = new SolanaRPC(privateKey);
     const address = await solanaRPC.getAccounts();
@@ -144,7 +143,7 @@ function Page() {
       return;
     }
 
-    const rpc = new EthereumRPC(provider);
+    const rpc = new BnBRPC(provider);
     const balance = await rpc.getBalance();
     const finalString = "ETH Balance: " + balance;
     uiConsole(finalString);
@@ -156,8 +155,8 @@ function Page() {
       return;
     }
 
-    const ethRPC = new EthereumRPC(provider!);
-    const privateKey = await ethRPC.getPrivateKey();
+    const bnbRPC = new BnBRPC(provider!);
+    const privateKey = await bnbRPC.getPrivateKey();
 
     const solanaRPC = new SolanaRPC(privateKey);
     const balance = await solanaRPC.getBalance();
@@ -170,7 +169,7 @@ function Page() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const rpc = new EthereumRPC(provider);
+    const rpc = new BnBRPC(provider);
     const receipt = await rpc.sendTransaction();
     uiConsole(receipt);
   };
@@ -181,8 +180,8 @@ function Page() {
       return;
     }
 
-    const ethRPC = new EthereumRPC(provider!);
-    const privateKey = await ethRPC.getPrivateKey();
+    const bnbRPC = new BnBRPC(provider!);
+    const privateKey = await bnbRPC.getPrivateKey();
 
     const solanaRPC = new SolanaRPC(privateKey);
     const receipt = await solanaRPC.sendTransaction();
@@ -194,7 +193,7 @@ function Page() {
       uiConsole("provider not initialized yet");
       return;
     }
-    const rpc = new EthereumRPC(provider);
+    const rpc = new BnBRPC(provider);
     const signedMessage = await rpc.signMessage();
     uiConsole(signedMessage);
   };
@@ -205,8 +204,8 @@ function Page() {
       return;
     }
 
-    const ethRPC = new EthereumRPC(provider!);
-    const privateKey = await ethRPC.getPrivateKey();
+    const bnbRPC = new BnBRPC(provider!);
+    const privateKey = await bnbRPC.getPrivateKey();
 
     const solanaRPC = new SolanaRPC(privateKey);
     const signedMessage = await solanaRPC.signMessage();
@@ -233,30 +232,30 @@ function Page() {
         </div>
         <div className="flex space-x-4">
           <div className="card bg-white shadow-md rounded-lg flex flex-col items-center p-6">
-            <h2 className="text-xl font-bold mb-2">Ethereum</h2>
+            <h2 className="text-xl font-bold mb-2">Binance Smart Chain</h2>
             <button
               onClick={getEthAccounts}
-              className="btn hover:bg-blue-400 p-1 rounded-md transition-colors"
+              className="btn hover:bg-yellow-400 p-1 rounded-md transition-colors"
             >
-              Get ETH Account
+              Get BNB Account
             </button>
             <button
               onClick={getEthBalance}
-              className="btn hover:bg-blue-400 p-1 rounded-md transition-colors"
+              className="btn hover:bg-yellow-400 p-1 rounded-md transition-colors"
             >
-              Get ETH Balance
+              Get BNB Balance
             </button>
             <button
               onClick={signEthereumMessage}
-              className="btn hover:bg-blue-400 p-1 rounded-md transition-colors"
+              className="btn hover:bg-yellow-400 p-1 rounded-md transition-colors"
             >
-              Sign Ethereum Message
+              Sign BNB Message
             </button>
             <button
               onClick={sendTransaction}
-              className="btn hover:bg-blue-400 p-1 rounded-md transition-colors"
+              className="btn hover:bg-yellow-400 p-1 rounded-md transition-colors"
             >
-              Send Ethereum Transaction
+              Send BNB Transaction
             </button>
           </div>
           <div className="card bg-white shadow-md rounded-lg flex flex-col items-center p-6">

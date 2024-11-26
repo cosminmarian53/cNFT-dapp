@@ -1,4 +1,9 @@
-import { CHAIN_NAMESPACES, WEB3AUTH_NETWORK, UX_MODE, Web3AuthNoModalOptions } from "@web3auth/base";
+import {
+  CHAIN_NAMESPACES,
+  WEB3AUTH_NETWORK,
+  UX_MODE,
+  Web3AuthNoModalOptions,
+} from "@web3auth/base";
 import { AuthAdapterOptions } from "@web3auth/auth-adapter";
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider";
 
@@ -7,27 +12,28 @@ const clientId =
 
 const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
-  chainId: "0xaa36a7",
-  rpcTarget: "https://rpc.ankr.com/eth_sepolia",
+  chainId: "0x61", // hex of 97
+  rpcTarget: "https://rpc.ankr.com/bsc_testnet_chapel",
   // Avoid using public rpcTarget in production.
   // Use services like Infura, Quicknode etc
-  displayName: "Ethereum Sepolia Testnet",
-  blockExplorerUrl: "https://sepolia.etherscan.io",
-  ticker: "ETH",
-  tickerName: "Ethereum",
-  logo: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+  displayName: "Binance SmartChain Testnet",
+  blockExplorerUrl: "https://testnet.bscscan.com",
+  ticker: "BNB",
+  tickerName: "BNB",
+  logo: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
 };
-const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig } });
+const privateKeyProvider = new EthereumPrivateKeyProvider({
+  config: { chainConfig },
+});
 
 export const web3AuthConfig: Web3AuthNoModalOptions = {
-    clientId,
+  clientId,
   privateKeyProvider,
   web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
 };
 
-
-export const authAdapterConfig: AuthAdapterOptions ={
-    adapterSettings: {
-      uxMode: UX_MODE.REDIRECT,
-    },
-  };
+export const authAdapterConfig: AuthAdapterOptions = {
+  adapterSettings: {
+    uxMode: UX_MODE.REDIRECT,
+  },
+};
