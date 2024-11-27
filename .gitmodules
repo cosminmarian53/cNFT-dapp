@@ -1,3 +1,6 @@
 [submodule "cross-chain-token-transfers/lib/forge-std"]
 	path = cross-chain-token-transfers/lib/forge-std
 	url = https://github.com/foundry-rs/forge-std
+[submodule "cross-chain-token-transfers/lib/wormhole-solidity-sdk"]
+	path = cross-chain-token-transfers/lib/wormhole-solidity-sdk
+	url = https://github.com/wormhole-foundation/wormhole-solidity-sdk
