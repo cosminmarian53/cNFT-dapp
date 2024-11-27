@@ -1,0 +1,3 @@
+[submodule "cross-chain-token-transfers/lib/forge-std"]
+	path = cross-chain-token-transfers/lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
