@@ -43,13 +43,17 @@ const WormholeBridge: React.FC<WormholeBridgeProps> = ({
       const srcChain = wh.getChain("Solana");
       const dstChain = wh.getChain("Bsc");
       // Get the token ID
+      const tb = await srcChain.getTokenBridge();
       const token = Wormhole.tokenId(srcChain.chain, assetId.toString());
+      await tb.createAttestation(token.address);
+
       // Transfer the NFT from Solana to EVM chain
       const source = await getSigner(srcChain, provider);
       const destination = await getSigner(dstChain, provider);
       const amt = "1";
       const automatic = false;
       const decimals = await getTokenDecimals(wh, token, srcChain);
+      console.log("Decimals: ", decimals);
       const xfer = await tokenTransfer(wh, {
         token,
         amount: amount.units(amount.parse(amt, decimals)),
