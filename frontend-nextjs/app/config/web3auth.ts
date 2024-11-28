@@ -14,7 +14,7 @@ const chainConfig = {
   chainNamespace: CHAIN_NAMESPACES.EIP155,
   chainId: "0x61", // hex of 97
   rpcTarget:
-    "https://bsc-testnet.infura.io/v3/bd333d08c1d44733b65868a1f2a6993b",
+    "https://bnb-testnet.g.alchemy.com/v2/esZoGAkwIvtrQifpDXfi9-vb-b9_UZfk",
   // Avoid using public rpcTarget in production.
   // Use services like Infura, Quicknode etc
   displayName: "Binance SmartChain Testnet",

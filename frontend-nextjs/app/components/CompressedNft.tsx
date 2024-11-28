@@ -13,8 +13,6 @@ import {
   redeem,
   findVoucherPda,
   decompressV1,
-  cancelRedeem,
-  TreeConfig,
   setDecompressibleState,
   DecompressibleState,
 } from "@metaplex-foundation/mpl-bubblegum";
@@ -50,6 +48,7 @@ const CompressedNft: React.FC<CompressedNftProps> = ({
   const [assetId, setAssetId] = useState<PublicKey | null>(null);
   const [voucher, setVoucher] = useState<Pda | null>(null);
 
+  // ---------INITIALIZE UMI---------
   const initializeUmi = async () => {
     try {
       console.log("Initializing UMI...");
