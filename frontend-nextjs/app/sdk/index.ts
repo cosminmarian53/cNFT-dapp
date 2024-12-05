@@ -10,15 +10,16 @@ import { deriveEmitterSequenceKey } from "@certusone/wormhole-sdk/lib/cjs/solana
 import { CONTRACTS } from "@certusone/wormhole-sdk";
 import { ethers } from "ethers";
 
-import { NftBurnBridging as NftBurnBridgingTypes } from "./types/nft_burn_bridging";
-import IDL from "./idl/nft_burn_bridging.json";
-import { PublicKey } from "@metaplex-foundation/umi";
+import { NftBurnBridging as NftBurnBridgingTypes } from "../types/nft_burn_bridging";
+import IDL from "../idl/nft_burn_bridging.json";
+import { publicKey } from "@metaplex-foundation/umi";
 import {
   Connection,
   PublicKeyInitData,
   TransactionInstruction,
   SystemProgram,
   SYSVAR_INSTRUCTIONS_PUBKEY,
+  PublicKey,
 } from "@solana/web3.js";
 
 const SEED_PREFIX_INSTANCE = Buffer.from("instance", "utf-8");

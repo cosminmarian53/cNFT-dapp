@@ -1,14 +1,6 @@
 import { useState } from "react";
-import {
-  PublicKey,
-  Keypair,
-  Connection,
-  SystemProgram,
-  SYSVAR_INSTRUCTIONS_PUBKEY,
-} from "@solana/web3.js";
-import { Wormhole } from "@wormhole-foundation/sdk";
-import { ethers } from "ethers";
-import { NftBurnBridging } from "../index"; // Importing from index.ts
+import { PublicKey, Keypair, Connection } from "@solana/web3.js";
+import { NftBurnBridging } from "../sdk"; // Importing from index.ts
 import { IProvider } from "@web3auth/base";
 import { publicKey } from "@metaplex-foundation/umi";
 
@@ -65,7 +57,8 @@ const WormholeBridge: React.FC<WormholeBridgeProps> = ({
     }
 
     try {
-      const isWhitelisted = await bridge.isNftWhitelisted(publicKey(nftMint));
+      const nftMintPublicKey = new PublicKey(nftMint);
+      const isWhitelisted = await bridge.isNftWhitelisted(nftMintPublicKey);
       uiConsole(`Whitelist status for ${nftMint}: ${isWhitelisted}`);
     } catch (err) {
       console.error(err);
