@@ -1,18 +1,16 @@
 import { useState } from "react";
 import {
-  wormhole,
-  Wormhole,
-  TokenTransfer,
-  amount,
-  Chain,
-  Network,
-  TokenId,
-} from "@wormhole-foundation/sdk";
-import evm from "@wormhole-foundation/sdk/evm";
-import solana from "@wormhole-foundation/sdk/solana";
-import { PublicKey, Keypair } from "@solana/web3.js";
+  PublicKey,
+  Keypair,
+  Connection,
+  SystemProgram,
+  SYSVAR_INSTRUCTIONS_PUBKEY,
+} from "@solana/web3.js";
+import { Wormhole } from "@wormhole-foundation/sdk";
+import { ethers } from "ethers";
+import { NftBurnBridging } from "../index"; // Importing from index.ts
 import { IProvider } from "@web3auth/base";
-import { SignerStuff, getSigner, getTokenDecimals } from "../helpers/helpers";
+import { publicKey } from "@metaplex-foundation/umi";
 
 interface WormholeBridgeProps {
   provider: IProvider | null;
@@ -28,107 +26,162 @@ const WormholeBridge: React.FC<WormholeBridgeProps> = ({
   solanaKeypair,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [bridge, setBridge] = useState<NftBurnBridging | null>(null);
+  const [evmRecipient, setEvmRecipient] = useState("");
+  const [whitelistEnabled, setWhitelistEnabled] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
 
-  const transfer = async () => {
-    if (!provider || !assetId || !solanaKeypair) {
-      uiConsole("Provider, assetId, or solanaKeypair not initialized yet");
+  // Initialize the NftBurnBridging instance
+  const initializeBridge = async () => {
+    try {
+      if (!assetId || !provider) throw new Error("Missing asset or provider");
+      const connection = new Connection("https://api.devnet.solana.com"); // Adjust for your cluster
+      const programId = new PublicKey(
+        "Scaffo1dingNftBurnBridging11111111111111111"
+      );
+      const wormholeId = new PublicKey(
+        "worm2ZoG2kUd4vFXhvjh93UUH596ayRfgQ2MgjNMTth"
+      );
+      const nftBridge = new NftBurnBridging(
+        connection,
+        assetId,
+        programId,
+        wormholeId
+      );
+
+      setBridge(nftBridge);
+      uiConsole("Bridge initialized successfully!");
+    } catch (err) {
+      console.error(err);
+      uiConsole("Error initializing bridge:", err);
+    }
+  };
+
+  // Check whitelist
+  const checkWhitelist = async (nftMint: string) => {
+    if (!bridge) {
+      uiConsole("Bridge is not initialized!");
       return;
     }
 
     try {
-      setLoading(true);
-      // Initialize Wormhole SDK
-      const wh = await wormhole("Testnet", [evm, solana]);
-      // Get the source and destination chains
-      const srcChain = wh.getChain("Solana");
-      const dstChain = wh.getChain("Bsc");
-      // Get the token ID
-      const tb = await srcChain.getTokenBridge();
-      const token = Wormhole.tokenId(srcChain.chain, assetId.toString());
-      await tb.createAttestation(token.address);
-
-      // Transfer the NFT from Solana to EVM chain
-      const source = await getSigner(srcChain, provider);
-      const destination = await getSigner(dstChain, provider);
-      const amt = "1";
-      const automatic = false;
-      const decimals = await getTokenDecimals(wh, token, srcChain);
-      console.log("Decimals: ", decimals);
-      const xfer = await tokenTransfer(wh, {
-        token,
-        amount: amount.units(amount.parse(amt, decimals)),
-        source,
-        destination,
-        automatic,
-      });
-
-      console.log("Starting transfer");
-      const srcTxids = await xfer.initiateTransfer(source.signer);
-      console.log(`Source Transaction ID: ${srcTxids[0]}`);
-      console.log(`Wormhole Transaction ID: ${srcTxids[1] ?? srcTxids[0]}`);
-
-      console.log("Getting Attestation");
-      await xfer.fetchAttestation(60_000);
-
-      console.log("Completing Transfer");
-      const destTxids = await xfer.completeTransfer(destination.signer);
-      console.log(`Completed Transfer: `, destTxids);
-
-      uiConsole("Transfer successful:", destTxids);
-    } catch (error) {
-      console.error("Error transferring NFT:", error);
-      uiConsole("Error transferring NFT:", error);
-    } finally {
-      setLoading(false);
+      const isWhitelisted = await bridge.isNftWhitelisted(publicKey(nftMint));
+      uiConsole(`Whitelist status for ${nftMint}: ${isWhitelisted}`);
+    } catch (err) {
+      console.error(err);
+      uiConsole("Error checking whitelist:", err);
     }
   };
 
-  async function tokenTransfer<N extends Network>(
-    wh: Wormhole<N>,
-    route: {
-      token: TokenId;
-      amount: bigint;
-      source: SignerStuff<N, Chain>;
-      destination: SignerStuff<N, Chain>;
-      automatic: boolean;
-      payload?: Uint8Array;
+  // Send and burn NFT
+  const sendAndBurn = async (nftMint: string) => {
+    if (!bridge || !solanaKeypair) {
+      uiConsole("Bridge or Solana Keypair not initialized!");
+      return;
     }
-  ) {
-    // Token Transfer Logic
-    // Create a TokenTransfer object to track the state of the transfer over time
-    const xfer = await wh.tokenTransfer(
-      route.token,
-      route.amount,
-      route.source.address,
-      route.destination.address,
-      route.automatic ?? false,
-      route.payload
-    );
 
-    const quote = await TokenTransfer.quoteTransfer(
-      wh,
-      route.source.chain,
-      route.destination.chain,
-      xfer.transfer
-    );
-    if (xfer.transfer.automatic && quote.destinationToken.amount < 0)
-      throw new Error(
-        "The amount requested is too low to cover the fee and any native gas requested."
+    try {
+      const instruction = await bridge.createSendAndBurnInstruction(
+        solanaKeypair.publicKey,
+        new PublicKey(nftMint),
+        evmRecipient
       );
 
-    return xfer;
-  }
+      uiConsole("Send and burn instruction created:", instruction);
+    } catch (err) {
+      console.error(err);
+      uiConsole("Error creating send and burn instruction:", err);
+    }
+  };
+
+  // Toggle whitelist enablement
+  const toggleWhitelist = async () => {
+    if (!bridge) {
+      uiConsole("Bridge is not initialized!");
+      return;
+    }
+
+    try {
+      const enabled = await bridge.isWhitelistEnabled();
+      setWhitelistEnabled(enabled);
+      uiConsole(`Whitelist enabled: ${enabled}`);
+    } catch (err) {
+      console.error(err);
+      uiConsole("Error checking whitelist status:", err);
+    }
+  };
+
+  // Toggle pause state
+  const togglePause = async () => {
+    if (!bridge) {
+      uiConsole("Bridge is not initialized!");
+      return;
+    }
+
+    try {
+      const paused = await bridge.isPaused();
+      setIsPaused(paused);
+      uiConsole(`Bridge paused state: ${paused}`);
+    } catch (err) {
+      console.error(err);
+      uiConsole("Error checking paused state:", err);
+    }
+  };
 
   return (
-    <div className="wormhole-bridge">
+    <div className="wormhole-bridge flex flex-col">
+      <h2 className="text-lg font-semibold text-center mt-2">
+        Wormhole Bridge
+      </h2>
+
       <button
-        onClick={transfer}
-        className={`btn ${
-          loading ? "bg-gray-400 cursor-not-allowed" : "hover:bg-purple-500"
-        } p-1 rounded-md transition-colors`}
+        className="btn btn-primary mt-4"
+        onClick={initializeBridge}
         disabled={loading}
       >
-        {loading ? "Transferring..." : "Transfer NFT"}
+        Initialize Bridge
+      </button>
+
+      <div className="flex flex-col mt-4">
+        <label className="text-sm font-semibold">EVM Recipient:</label>
+        <input
+          type="text"
+          className="input input-bordered"
+          value={evmRecipient}
+          onChange={(e) => setEvmRecipient(e.target.value)}
+        />
+      </div>
+
+      <button
+        className="btn btn-secondary mt-4"
+        onClick={() => checkWhitelist("YourNFTMintHere")}
+        disabled={!bridge || loading}
+      >
+        Check Whitelist
+      </button>
+
+      <button
+        className="btn btn-secondary mt-4"
+        onClick={() => sendAndBurn("YourNFTMintHere")}
+        disabled={!bridge || !evmRecipient || loading}
+      >
+        Send & Burn NFT
+      </button>
+
+      <button
+        className="btn btn-secondary mt-4"
+        onClick={toggleWhitelist}
+        disabled={!bridge || loading}
+      >
+        Toggle Whitelist
+      </button>
+
+      <button
+        className="btn btn-secondary mt-4"
+        onClick={togglePause}
+        disabled={!bridge || loading}
+      >
+        Toggle Pause
       </button>
     </div>
   );

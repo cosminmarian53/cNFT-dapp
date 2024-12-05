@@ -10,7 +10,9 @@
   },
   "//IMP START": "IMP START - Web3Auth Installation",
   "dependencies": {
+    "@certusone/wormhole-sdk": "^0.10.18",
     "@metaplex-foundation/digital-asset-standard-api": "^1.0.4",
+    "@metaplex-foundation/js": "^0.20.1",
     "@metaplex-foundation/mpl-bubblegum": "^4.2.1",
     "@metaplex-foundation/mpl-core-das": "^0.0.3",
     "@metaplex-foundation/mpl-token-metadata": "^3.3.0",
